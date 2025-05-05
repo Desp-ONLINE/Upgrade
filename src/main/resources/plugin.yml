@@ -1,0 +1,8 @@
+name: Upgrade
+version: '1.0-SNAPSHOT'
+main: org.desp.upgrade.Upgrade
+api-version: '1.20'
+commands:
+  reinforce:
+  강화재료설정:
+depend: [MMOItems, Vault, MongoLibraryPlugin, BinggreAPI, BinggreEconomy, MMOCore, MythicLib,BeautyQuests]
