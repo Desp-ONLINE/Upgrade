@@ -3,12 +3,14 @@ package org.desp.upgrade.listener;
 import com.binggre.binggreEconomy.BinggreEconomy;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.quests.Quest;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import org.bukkit.Bukkit;
@@ -69,8 +71,8 @@ public class UpgradeListener implements Listener {
         int weaponLevel = weaponData.getLevel();
 
         if (e.getSlot() == UpgradeButtonSlot.SLOT) {
-            if (weaponLevel <= playerLevel){
-               processUpgrade(e, weaponData, itemName, session);
+            if (weaponLevel <= playerLevel) {
+                processUpgrade(e, weaponData, itemName, session);
             } else {
                 player.sendMessage("§c 강화에 필요한 레벨에 도달하지 못했습니다");
             }
@@ -117,12 +119,14 @@ public class UpgradeListener implements Listener {
 
             player.getInventory().removeItem(session.getCurrentItem());
 
-            ItemStack upgradedItem;
-            if (MMOItems.plugin.getItem(Type.SWORD, weaponData.getAfterWeapon()) == null) {
-                upgradedItem = MMOItems.plugin.getItem(Type.ARMOR, weaponData.getAfterWeapon());
-            } else {
-                upgradedItem = MMOItems.plugin.getItem(Type.SWORD, weaponData.getAfterWeapon());
+            ItemStack upgradedItem = null;
+            for (Type type : MMOItems.plugin.getTypes().getAll()) {
+                if (MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) != null) {
+                    upgradedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
+                    break;
+                }
             }
+            
             player.getInventory().addItem(upgradedItem);
 
             player.closeInventory();
@@ -227,7 +231,7 @@ public class UpgradeListener implements Listener {
             PlayerUpgradeInfo session = playerSessions.remove(uuid);
             if (session == null) {
                 return;
-            } else{
+            } else {
                 session.setItemName(null);
             }
 
