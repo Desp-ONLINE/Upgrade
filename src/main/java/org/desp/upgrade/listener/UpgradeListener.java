@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
+import net.Indyuce.mmoitems.manager.TypeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -111,19 +112,20 @@ public class UpgradeListener implements Listener {
 
         Bukkit.getPluginManager().callEvent(new UpgradeTryEvent(weaponData, player));
 
+        BinggreEconomy.getInst().getEconomy().withdrawPlayer(player, upgradeCost);
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
             player.sendMessage("§a 강화에 성공하였습니다!");
 
-            BinggreEconomy.getInst().getEconomy().withdrawPlayer(player, upgradeCost);
-
             player.getInventory().removeItem(session.getCurrentItem());
 
             ItemStack upgradedItem = null;
-            for (Type type : MMOItems.plugin.getTypes().getAll()) {
-                if (MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) != null) {
+            TypeManager types = MMOItems.plugin.getTypes();
+            for (Type type : types.getAll()) {
+                if(MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) == null) {
+                    continue;
+                } else {
                     upgradedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
-                    break;
                 }
             }
             
@@ -213,10 +215,13 @@ public class UpgradeListener implements Listener {
         PlayerUpgradeInfo session = playerSessions.computeIfAbsent(player.getUniqueId(), PlayerUpgradeInfo::new);
 
         session.setMaterials(weaponData.getMaterials());
-        session.setCurrentItem(currentItem);
+
+        ItemStack oneItem = currentItem.clone();
+        oneItem.setAmount(1);
+        session.setCurrentItem(oneItem);
         session.setItemName(itemName);
 
-        ItemRender.renderAfterWeapon(currentItem, itemName, e, player);
+        ItemRender.renderAfterWeapon(oneItem, itemName, e, player);
 
         UpgradeUtil.setLore(e, weaponData);
 
