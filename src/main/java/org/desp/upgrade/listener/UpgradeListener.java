@@ -131,7 +131,11 @@ public class UpgradeListener implements Listener {
             
             player.getInventory().addItem(upgradedItem);
 
-            player.closeInventory();
+//            player.closeInventory();
+            session.setCurrentItem(null);
+            session.setMaterials(null);
+            session.setItemName(null);
+
         } else if (result == UpgradeResult.FAIL) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailEvent(weaponData, player));
             player.sendMessage("§c 강화에 실패하였습니다");
