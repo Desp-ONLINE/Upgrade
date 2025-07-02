@@ -15,6 +15,7 @@ import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import net.Indyuce.mmoitems.manager.TypeManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -122,31 +123,40 @@ public class UpgradeListener implements Listener {
             ItemStack upgradedItem = null;
             TypeManager types = MMOItems.plugin.getTypes();
             for (Type type : types.getAll()) {
-                if(MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) == null) {
+                if (MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) == null) {
                     continue;
                 } else {
                     upgradedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
                 }
             }
-            
+
             player.getInventory().addItem(upgradedItem);
 
 //            player.closeInventory();
+            removeRequiredMaterials(player, requiredMaterials);
             session.setCurrentItem(null);
             session.setMaterials(null);
             session.setItemName(null);
+            e.getInventory().setItem(10, new ItemStack(Material.AIR));
+            e.getInventory().setItem(16, new ItemStack(Material.AIR));
+            for (int i = 36; i <= 54; i++) {
+                e.getInventory().setItem(i, new ItemStack(Material.AIR));
+            }
 
         } else if (result == UpgradeResult.FAIL) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailEvent(weaponData, player));
             player.sendMessage("§c 강화에 실패하였습니다");
+            removeRequiredMaterials(player, requiredMaterials);
+
         } else if (result == UpgradeResult.DESTRUCTION) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailandDistroyEvent(weaponData, session.getCurrentItem(), player));
             player.sendMessage("§4 강화에 실패하여 무기가 사라졌습니다");
             player.getInventory().removeItem(session.getCurrentItem());
             player.closeInventory();
+            removeRequiredMaterials(player, requiredMaterials);
+
         }
 
-        removeRequiredMaterials(player, requiredMaterials);
     }
 
     private boolean hasRequiredMaterials(ItemStack[] inventory, List<Map<String, Integer>> requiredMaterials) {
