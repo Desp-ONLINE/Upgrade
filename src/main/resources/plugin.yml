@@ -5,4 +5,6 @@ api-version: '1.20'
 commands:
   reinforce:
   강화재료설정:
+  다운그레이드:
+    aliases: ["ekdnsrmfpdlem"]
 depend: [MMOItems, Vault, MongoLibraryPlugin, BinggreAPI, BinggreEconomy, MMOCore, MythicLib,BeautyQuests]

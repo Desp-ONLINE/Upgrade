@@ -9,7 +9,9 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.desp.upgrade.Upgrade;
+import org.desp.upgrade.utils.ProtectItemCode;
 import org.desp.upgrade.utils.UpgradeButtonSlot;
+import org.desp.upgrade.view.ItemRender;
 import org.jetbrains.annotations.NotNull;
 
 public class UpgradeUI implements InventoryHolder {
@@ -32,6 +34,12 @@ public class UpgradeUI implements InventoryHolder {
             item.setLore(defaultLore);
 
             inventory.setItem(UpgradeButtonSlot.SLOT, item);
+
+            ItemStack protectItem = ItemRender.getProtectItem(false);
+
+
+            inventory.setItem(UpgradeButtonSlot.PROTECT_SLOT, protectItem);
+
         }
         return inventory;
     }

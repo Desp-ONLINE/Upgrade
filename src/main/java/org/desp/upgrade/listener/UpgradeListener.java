@@ -4,12 +4,8 @@ import com.binggre.binggreEconomy.BinggreEconomy;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.quests.Quest;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
 
 import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
@@ -22,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.desp.upgrade.ui.MaterialUI;
 import org.desp.upgrade.ui.UpgradeUI;
 import org.desp.upgrade.Upgrade;
@@ -32,10 +29,7 @@ import org.desp.upgrade.event.UpgradeFailEvent;
 import org.desp.upgrade.event.UpgradeFailandDistroyEvent;
 import org.desp.upgrade.event.UpgradeSuccessEvent;
 import org.desp.upgrade.event.UpgradeTryEvent;
-import org.desp.upgrade.utils.UpgradeButtonSlot;
-import org.desp.upgrade.utils.UpgradeResult;
-import org.desp.upgrade.utils.UpgradeUtil;
-import org.desp.upgrade.utils.Validator;
+import org.desp.upgrade.utils.*;
 import org.desp.upgrade.view.ItemRender;
 
 public class UpgradeListener implements Listener {
@@ -74,14 +68,42 @@ public class UpgradeListener implements Listener {
 
         if (e.getSlot() == UpgradeButtonSlot.SLOT) {
             if (weaponLevel <= playerLevel) {
-                processUpgrade(e, weaponData, itemName, session);
+                if (e.getInventory().getItem(UpgradeButtonSlot.PROTECT_SLOT).getItemMeta().getCustomModelData() == ProtectItemCode.PROTECT_FALSE) {
+                    processUpgrade(e, weaponData, itemName, session, false);
+
+                } else {
+                    processUpgrade(e, weaponData, itemName, session, true);
+
+                }
             } else {
                 player.sendMessage("§c 강화에 필요한 레벨에 도달하지 못했습니다");
             }
         }
+        if (e.getSlot() == UpgradeButtonSlot.PROTECT_SLOT) {
+            if (e.getCurrentItem().getItemMeta().getCustomModelData() == ProtectItemCode.PROTECT_FALSE) {
+                ItemStack protectLight = MMOItems.plugin.getItem("MISCELLANEOUS", "기타_광휘의빛");
+                boolean isLightExist = false;
+                for (ItemStack itemStack : player.getInventory()) {
+                    if (MMOItems.getID(itemStack).equals("기타_광휘의빛")) {
+                        isLightExist = true;
+                        break;
+                    }
+                }
+                if (!isLightExist) {
+                    player.sendMessage("§c 광휘의 빛이 인벤토리에 없습니다. 확인 해주세요.");
+                    return;
+                }
+                ItemStack protectItem = ItemRender.getProtectItem(true);
+                e.setCurrentItem(protectItem);
+            } else if (e.getCurrentItem().getItemMeta().getCustomModelData() == ProtectItemCode.PROTECT_TRUE) {
+                ItemStack protectItem = ItemRender.getProtectItem(false);
+                e.setCurrentItem(protectItem);
+            }
+        }
+
     }
 
-    private void processUpgrade(InventoryClickEvent e, UpgradeData weaponData, String itemName, PlayerUpgradeInfo session) {
+    private void processUpgrade(InventoryClickEvent e, UpgradeData weaponData, String itemName, PlayerUpgradeInfo session, boolean isProtected) {
         Player player = (Player) e.getWhoClicked();
         double balance = BinggreEconomy.getInst().getEconomy().getBalance(player);
         int upgradeCost = weaponData.getCost();
@@ -114,6 +136,15 @@ public class UpgradeListener implements Listener {
         Bukkit.getPluginManager().callEvent(new UpgradeTryEvent(weaponData, player));
 
         BinggreEconomy.getInst().getEconomy().withdrawPlayer(player, upgradeCost);
+        if (isProtected) {
+            for (ItemStack itemStack : player.getInventory()) {
+                if (MMOItems.getID(itemStack).equals("기타_광휘의빛")) {
+                    itemStack.setAmount(itemStack.getAmount() - 1);
+                }
+            }
+            ItemStack protectItem = ItemRender.getProtectItem(false);
+            e.getInventory().setItem(UpgradeButtonSlot.PROTECT_SLOT, protectItem);
+        }
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
             player.sendMessage("§a 강화에 성공하였습니다!");
@@ -132,30 +163,38 @@ public class UpgradeListener implements Listener {
 
             player.getInventory().addItem(upgradedItem);
 
-//            player.closeInventory();
-            removeRequiredMaterials(player, requiredMaterials);
+            removeRequiredMaterials(player, requiredMaterials, false);
             session.setCurrentItem(null);
             session.setMaterials(null);
             session.setItemName(null);
             e.getInventory().setItem(10, new ItemStack(Material.AIR));
             e.getInventory().setItem(16, new ItemStack(Material.AIR));
-            for (int i = 36; i <= 54; i++) {
+            for (int i = 36; i < 54; i++) {
                 e.getInventory().setItem(i, new ItemStack(Material.AIR));
             }
 
+            // 강화 성공 시 상태 그대로 유지
+            processUpgrade(e, );
+
         } else if (result == UpgradeResult.FAIL) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailEvent(weaponData, player));
-            player.sendMessage("§c 강화에 실패하였습니다");
-            removeRequiredMaterials(player, requiredMaterials);
+            if (isProtected) {
+                removeRequiredMaterials(player, requiredMaterials, true);
+                player.sendMessage("§c 강화에 실패하였습니다. 광휘의 빛으로 재료를 보호했습니다.");
+            } else {
+                removeRequiredMaterials(player, requiredMaterials, false);
+                player.sendMessage("§c 강화에 실패하였습니다.");
+            }
 
         } else if (result == UpgradeResult.DESTRUCTION) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailandDistroyEvent(weaponData, session.getCurrentItem(), player));
             player.sendMessage("§4 강화에 실패하여 무기가 사라졌습니다");
             player.getInventory().removeItem(session.getCurrentItem());
             player.closeInventory();
-            removeRequiredMaterials(player, requiredMaterials);
+            removeRequiredMaterials(player, requiredMaterials, false);
 
         }
+
 
     }
 
@@ -187,7 +226,10 @@ public class UpgradeListener implements Listener {
         return true;
     }
 
-    private void removeRequiredMaterials(Player player, List<Map<String, Integer>> requiredMaterials) {
+    private void removeRequiredMaterials(Player player, List<Map<String, Integer>> requiredMaterials, boolean isProtected) {
+        if (isProtected) {
+            return;
+        }
         for (Map<String, Integer> material : requiredMaterials) {
             material.forEach((requiredId, requiredQuantity) ->
                     requiredQuantity = removeMaterialFromInventory(player, requiredId, requiredQuantity)
@@ -215,6 +257,34 @@ public class UpgradeListener implements Listener {
     private void handlePlayerInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
         ItemStack currentItem = e.getCurrentItem();
+
+        if (currentItem == null || currentItem.getType().isAir()) {
+            return;
+        }
+        String itemName = MMOItems.getID(currentItem);
+
+        UpgradeData weaponData = Upgrade.getAllWeaponData().get(itemName);
+        if (weaponData == null) {
+            return;
+        }
+
+        PlayerUpgradeInfo session = playerSessions.computeIfAbsent(player.getUniqueId(), PlayerUpgradeInfo::new);
+
+        session.setMaterials(weaponData.getMaterials());
+
+        ItemStack oneItem = currentItem.clone();
+        oneItem.setAmount(1);
+        session.setCurrentItem(oneItem);
+        session.setItemName(itemName);
+
+        ItemRender.renderAfterWeapon(oneItem, itemName, e, player);
+
+        UpgradeUtil.setLore(e, weaponData);
+
+        ItemRender.renderMaterialsInventoryClick(itemName, e);
+    }
+
+    private void setPlayerSessions(InventoryClickEvent e, Player player, ItemStack currentItem) {
 
         if (currentItem == null || currentItem.getType().isAir()) {
             return;

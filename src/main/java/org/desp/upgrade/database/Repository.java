@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import lombok.Getter;
 import org.bson.Document;
 import org.desp.upgrade.dto.UpgradeData;
 
@@ -21,7 +23,7 @@ public class Repository {
     private final MongoClient mongoClient;
     private final MongoDatabase database;
     public static MongoCollection<Document> weapons = null;
-    private final Map<String, UpgradeData> weaponRepository = new HashMap<>();
+    public static Map<String, UpgradeData> weaponRepository = new HashMap<>();
 
     public Repository() {
         DBConfig connector = new DBConfig();

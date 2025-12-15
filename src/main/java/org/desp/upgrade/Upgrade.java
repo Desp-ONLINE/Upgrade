@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.desp.upgrade.command.MaterialCommand;
+import org.desp.upgrade.command.RollbackCommand;
 import org.desp.upgrade.command.UpgradeCommand;
 import org.desp.upgrade.database.Repository;
 import org.desp.upgrade.dto.UpgradeData;
@@ -31,6 +32,7 @@ public class Upgrade extends JavaPlugin {
 
         this.getServer().getPluginManager().registerEvents(new UpgradeListener(), this);
         getCommand("reinforce").setExecutor(new UpgradeCommand());
+        getCommand("다운그레이드").setExecutor(new RollbackCommand());
         getCommand("강화재료설정").setExecutor(new MaterialCommand());
     }
 

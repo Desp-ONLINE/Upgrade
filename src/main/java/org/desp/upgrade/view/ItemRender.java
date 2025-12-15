@@ -1,5 +1,6 @@
 package org.desp.upgrade.view;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -7,12 +8,15 @@ import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import net.Indyuce.mmoitems.manager.TypeManager;
 import org.bson.Document;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.desp.upgrade.Upgrade;
 import org.desp.upgrade.dto.UpgradeData;
+import org.desp.upgrade.utils.ProtectItemCode;
 import org.desp.upgrade.utils.UpgradeButtonSlot;
 
 public class ItemRender {
@@ -64,7 +68,7 @@ public class ItemRender {
 
 
     public static void renderMaterialsInventoryClick(String itemName, InventoryClickEvent e) {
-        Upgrade.register();
+//        Upgrade.register();
 
         UpgradeData upgradeData = Upgrade.getAllWeaponData().get(itemName);
         if (upgradeData == null) {
@@ -103,5 +107,39 @@ public class ItemRender {
                 slot++;
             }
         }
+    }
+
+    public static ItemStack getProtectItem(boolean isProtect){
+        ItemStack protectItem = new ItemStack(Material.PAPER, 1);
+
+        if(isProtect){
+            ItemMeta protectItemMeta = protectItem.getItemMeta();
+            protectItemMeta.setCustomModelData(ProtectItemCode.PROTECT_TRUE);
+            protectItemMeta.setDisplayName("§a 광휘의 빛 사용");
+            protectItem.setItemMeta(protectItemMeta);
+
+            List<String> protectItemLore = new ArrayList<>();
+            protectItemLore.add("§7   현재 광휘의 빛 §a§n사용§7으로 설정되어 있습니다.");
+            protectItemLore.add("§7   클릭 시 §c비활성화§7로 변경됩니다.");
+            protectItemLore.add("");
+            protectItemLore.add("§e   광휘의 빛이란?");
+            protectItemLore.add("§f   - 강화 실패 시 재료가 소모되는 것을 방지해줍니다. 성공 시에도 광휘의 빛은 소모됩니다.");
+            protectItem.setLore(protectItemLore);
+        }else {
+            ItemMeta protectItemMeta = protectItem.getItemMeta();
+            protectItemMeta.setCustomModelData(ProtectItemCode.PROTECT_FALSE);
+            protectItemMeta.setDisplayName("§c 광휘의 빛 미사용");
+            protectItem.setItemMeta(protectItemMeta);
+
+            List<String> protectItemLore = new ArrayList<>();
+            protectItemLore.add("§7   현재 광휘의 빛 §c§n미사용§7으로 설정되어 있습니다.");
+            protectItemLore.add("§7   클릭 시 §a활성화§7로 변경됩니다.");
+            protectItemLore.add("");
+            protectItemLore.add("§e   광휘의 빛이란?");
+            protectItemLore.add("§f   - 강화 실패 시 재료가 소모되는 것을 방지해줍니다. 성공 시에도 광휘의 빛은 소모됩니다.");
+            protectItem.setLore(protectItemLore);
+        }
+        return protectItem;
+
     }
 }

@@ -68,4 +68,18 @@ public class UpgradeUtil {
         }
         return materials;
     }
+
+    public static Map<String, Integer> getMaterials(Inventory inventory) {
+        Map<String, Integer> materials = new HashMap<>();
+
+        for (ItemStack item : inventory.getContents()) {
+            if (item != null && item.getType() != Material.AIR) {
+                String itemId = MMOItems.getID(item);
+                int quantity = item.getAmount();
+                // ID를 키로, 수량을 값으로 추가
+                materials.put(itemId, materials.getOrDefault(itemId, 0) + quantity);
+            }
+        }
+        return materials;
+    }
 }
