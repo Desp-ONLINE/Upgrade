@@ -1,6 +1,7 @@
 package org.desp.upgrade.listener;
 
 import com.binggre.binggreEconomy.BinggreEconomy;
+import com.binggre.binggreapi.utils.ColorManager;
 import fr.skytasul.quests.BeautyQuests;
 import fr.skytasul.quests.api.quests.Quest;
 
@@ -124,7 +125,7 @@ public class UpgradeListener implements Listener {
 
         int proceedQuest = weaponData.getProceedQuest();
         Quest quest = BeautyQuests.getInstance().getAPI().getQuestsManager().getQuest(proceedQuest);
-        boolean isSatisfiedQuest = BeautyQuests.getInstance().getPlayersManager().getAccount(player).hasQuestDatas(quest);
+        boolean isSatisfiedQuest = BeautyQuests.getInstance().getPlayersManager().getAccount(player).getQuestDatas(quest).isFinished();
 
         if (!isSatisfiedQuest) {
             player.sendMessage("§c 최소 퀘스트를 진행하지 않았습니다");
@@ -147,7 +148,6 @@ public class UpgradeListener implements Listener {
         }
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
-            player.sendMessage("§a 강화에 성공하였습니다!");
 
             player.getInventory().removeItem(session.getCurrentItem());
 
@@ -160,6 +160,8 @@ public class UpgradeListener implements Listener {
                     upgradedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
                 }
             }
+            player.playSound(player, "minecraft:block.anvil.use", 1, 1);
+            player.sendMessage(ColorManager.format("#FF8D56 [강화] §f"+upgradedItem.getItemMeta().getDisplayName()+"§a 강화에 성공하였습니다!"));
 
             player.getInventory().addItem(upgradedItem);
 
@@ -173,18 +175,35 @@ public class UpgradeListener implements Listener {
                 e.getInventory().setItem(i, new ItemStack(Material.AIR));
             }
 
+            if (Repository.weaponRepository.get(MMOItems.getID(upgradedItem)) != null) {
+                setPlayerSessions(e, player, upgradedItem);
+            }
+
             // 강화 성공 시 상태 그대로 유지
-            processUpgrade(e, );
 
         } else if (result == UpgradeResult.FAIL) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailEvent(weaponData, player));
+
+
+            ItemStack failedItem = null;
+            TypeManager types = MMOItems.plugin.getTypes();
+            for (Type type : types.getAll()) {
+                if (MMOItems.plugin.getItem(type, weaponData.getAfterWeapon()) == null) {
+                    continue;
+                } else {
+                    failedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
+                }
+            }
+
             if (isProtected) {
                 removeRequiredMaterials(player, requiredMaterials, true);
-                player.sendMessage("§c 강화에 실패하였습니다. 광휘의 빛으로 재료를 보호했습니다.");
+                player.sendMessage(ColorManager.format("#FF8D56 [강화] §f"+failedItem.getItemMeta().getDisplayName()+"§c 강화에 실패하였지만, 광휘의 빛으로 재료를 보호했습니다."));
             } else {
                 removeRequiredMaterials(player, requiredMaterials, false);
-                player.sendMessage("§c 강화에 실패하였습니다.");
+                player.sendMessage(ColorManager.format("#FF8D56 [강화] §f"+failedItem.getItemMeta().getDisplayName()+"§c 강화에 실패하였습니다."));
             }
+            player.playSound(player, "minecraft:entity.generic.explode", 1, 2);
+
 
         } else if (result == UpgradeResult.DESTRUCTION) {
             Bukkit.getPluginManager().callEvent(new UpgradeFailandDistroyEvent(weaponData, session.getCurrentItem(), player));
@@ -194,6 +213,7 @@ public class UpgradeListener implements Listener {
             removeRequiredMaterials(player, requiredMaterials, false);
 
         }
+        System.out.println("[upgradeLog] " + player.getName()+ ": "+weaponData.getBeforeWeapon()+" -> "+weaponData.getAfterWeapon() +" :: "+result.name());
 
 
     }
