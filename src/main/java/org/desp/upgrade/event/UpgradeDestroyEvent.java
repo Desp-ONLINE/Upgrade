@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import org.desp.upgrade.dto.UpgradeData;
 import org.jetbrains.annotations.NotNull;
 
-public class UpgradeFailandDistroyEvent extends Event implements Cancellable {
+public class UpgradeDestroyEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private UpgradeData upgradeData;
     private ItemStack destroyItem;
@@ -21,7 +21,7 @@ public class UpgradeFailandDistroyEvent extends Event implements Cancellable {
         this.player = player;
     }
 
-    public UpgradeFailandDistroyEvent(UpgradeData upgradeData, ItemStack destroyItem, Player player) {
+    public UpgradeDestroyEvent(UpgradeData upgradeData, ItemStack destroyItem, Player player) {
         this.upgradeData = upgradeData;
         this.destroyItem = destroyItem;
         this.player = player;

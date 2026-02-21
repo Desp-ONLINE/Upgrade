@@ -19,7 +19,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.desp.upgrade.ui.MaterialUI;
 import org.desp.upgrade.ui.UpgradeUI;
 import org.desp.upgrade.Upgrade;
@@ -27,7 +26,7 @@ import org.desp.upgrade.database.Repository;
 import org.desp.upgrade.dto.PlayerUpgradeInfo;
 import org.desp.upgrade.dto.UpgradeData;
 import org.desp.upgrade.event.UpgradeFailEvent;
-import org.desp.upgrade.event.UpgradeFailandDistroyEvent;
+import org.desp.upgrade.event.UpgradeDestroyEvent;
 import org.desp.upgrade.event.UpgradeSuccessEvent;
 import org.desp.upgrade.event.UpgradeTryEvent;
 import org.desp.upgrade.utils.*;
@@ -206,8 +205,8 @@ public class UpgradeListener implements Listener {
 
 
         } else if (result == UpgradeResult.DESTRUCTION) {
-            Bukkit.getPluginManager().callEvent(new UpgradeFailandDistroyEvent(weaponData, session.getCurrentItem(), player));
-            player.sendMessage("§4 강화에 실패하여 무기가 사라졌습니다");
+            Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
+            player.sendMessage("§4 강화에 실패하여 아이템이 파괴되었습니다.");
             player.getInventory().removeItem(session.getCurrentItem());
             player.closeInventory();
             removeRequiredMaterials(player, requiredMaterials, false);
