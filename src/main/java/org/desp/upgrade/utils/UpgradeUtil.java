@@ -25,10 +25,10 @@ public class UpgradeUtil {
                 "§e     강화 필요 비용: §f" + weaponData.getCost() + "골드",
                 "§a§m                                                ",
                 "§3     성공 확률: §f" + weaponData.getSuccessPercentage() + "%",
-                "§c     실패 확률: §f" + (100 - weaponData.getSuccessPercentage()) + "%",
+                "§c     실패 확률: §f" + (100 - weaponData.getSuccessPercentage() - weaponData.getDestructionPercentage()) + "%",
                 "§4     파괴 확률: §f" + weaponData.getDestructionPercentage() + "%",
                 "§a§m                                                ",
-                "§6     필요 퀘스트: §f메인퀘스트 "+weaponData.getProceedQuest()
+                "§6     필요 퀘스트: §f메인 퀘스트 "+weaponData.getProceedQuest()
         );
 
         cursor.setLore(upgradeLore);
