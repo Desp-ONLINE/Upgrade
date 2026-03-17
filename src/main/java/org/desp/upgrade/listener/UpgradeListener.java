@@ -12,6 +12,7 @@ import net.Indyuce.mmoitems.MMOItems;
 import net.Indyuce.mmoitems.api.Type;
 import net.Indyuce.mmoitems.manager.TypeManager;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,6 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.desp.upgrade.ui.MaterialUI;
 import org.desp.upgrade.ui.UpgradeUI;
 import org.desp.upgrade.Upgrade;
@@ -145,6 +147,25 @@ public class UpgradeListener implements Listener {
             ItemStack protectItem = ItemRender.getProtectItem(false);
             e.getInventory().setItem(UpgradeButtonSlot.PROTECT_SLOT, protectItem);
         }
+        boolean isProtectDestroy = false;
+        // 연마석 보호 확인
+        PlayerInventory inventory = player.getInventory();
+        for (ItemStack storageContent : inventory.getStorageContents()) {
+            String id = MMOItems.getID(storageContent);
+            if(id==null){
+                continue;
+            }
+            if(id.startsWith("기타_연마보호권_")){
+                String targetProtectRingName = id.replace("기타_연마보호권_", "");
+                String targetRingName = weaponData.getBeforeWeapon().replace("주간반지_", "").replace("_연마", "").replace("1", "").replace("2", "").replace("3", "").replace("4", "").replace("5", "");
+                if(targetRingName.equals(targetProtectRingName)){
+                    isProtectDestroy = true;
+                    player.sendMessage(ColorManager.format("§6§o [강화] #268557정#6EAB6A령#B7D17C의 #D8F888가#B2F981호 §7§o("+targetRingName+") §f을 통해, 반지 연마를 보호했습니다."));
+                    storageContent.setAmount(storageContent.getAmount() - 1);
+                    break;
+                }
+            }
+        }
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
 
@@ -207,7 +228,9 @@ public class UpgradeListener implements Listener {
         } else if (result == UpgradeResult.DESTRUCTION) {
             Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
             player.sendMessage("§4 강화에 실패하여 아이템이 파괴되었습니다.");
-            player.getInventory().removeItem(session.getCurrentItem());
+            if(!isProtectDestroy){
+                player.getInventory().removeItem(session.getCurrentItem());
+            }
             player.closeInventory();
             removeRequiredMaterials(player, requiredMaterials, false);
 
