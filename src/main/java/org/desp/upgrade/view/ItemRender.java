@@ -9,6 +9,7 @@ import net.Indyuce.mmoitems.api.Type;
 import net.Indyuce.mmoitems.manager.TypeManager;
 import org.bson.Document;
 import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
@@ -77,6 +78,10 @@ public class ItemRender {
 
         List<Map<String, Integer>> materials = upgradeData.getMaterials();
         int slot = 36;
+
+        for(int i = slot; i<54;i++){
+            e.getInventory().setItem(i, new ItemStack(Material.AIR));
+        }
 
         for (Map<String, Integer> material : materials) {
             for (Entry<String, Integer> entry : material.entrySet()) {
