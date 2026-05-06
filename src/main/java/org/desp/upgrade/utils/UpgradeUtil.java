@@ -1,6 +1,8 @@
 package org.desp.upgrade.utils;
 
 import java.util.*;
+
+import com.binggre.binggreapi.utils.NumberUtil;
 import net.Indyuce.mmocore.api.MMOCoreAPI;
 import net.Indyuce.mmocore.api.player.PlayerData;
 import net.Indyuce.mmoitems.MMOItems;
@@ -22,7 +24,7 @@ public class UpgradeUtil {
                 "§f    강화 정보",
                 "§a§m                                                ",
                 "§e     강화 필요 레벨: §f" + weaponData.getLevel() + "Lv",
-                "§e     강화 필요 비용: §f" + weaponData.getCost() + "골드",
+                "§e     강화 필요 비용: §f" + NumberUtil.applyComma(weaponData.getCost()) + "골드",
                 "§a§m                                                ",
                 "§3     성공 확률: §f" + weaponData.getSuccessPercentage() + "%",
                 "§c     실패 확률: §f" + (100 - weaponData.getSuccessPercentage() - weaponData.getDestructionPercentage()) + "%",

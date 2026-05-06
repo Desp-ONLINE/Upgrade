@@ -142,6 +142,7 @@ public class UpgradeListener implements Listener {
             for (ItemStack itemStack : player.getInventory()) {
                 if (MMOItems.getID(itemStack).equals("기타_광휘의빛")) {
                     itemStack.setAmount(itemStack.getAmount() - 1);
+                    break;
                 }
             }
             ItemStack protectItem = ItemRender.getProtectItem(false);
