@@ -23,11 +23,11 @@ public class UpgradeUtil {
         int boost = UpgradeEventManager.getBoost();
         int baseSuccess = weaponData.getSuccessPercentage();
         int destruction = weaponData.getDestructionPercentage();
-        int boostedSuccess = Math.min(baseSuccess + boost, 100 - destruction);
-        int actualBoost = boostedSuccess - baseSuccess;
-        int fail = 100 - boostedSuccess - destruction;
+        int boostedSuccess = Math.min(baseSuccess + boost, 100);
+        int actualBoost = Math.max(0, boostedSuccess - baseSuccess);
+        int fail = Math.max(0, 100 - boostedSuccess - destruction);
 
-        String successLine = boost > 0
+        String successLine = actualBoost > 0
                 ? "§3     성공 확률: §f" + baseSuccess + "% §a(+" + actualBoost + "%)"
                 : "§3     성공 확률: §f" + baseSuccess + "%";
 
@@ -59,7 +59,7 @@ public class UpgradeUtil {
         if (upgradeData == null) return null;
 
         double destructionPercentage = upgradeData.getDestructionPercentage();
-        double successPercentage = Math.min(upgradeData.getSuccessPercentage() + UpgradeEventManager.getBoost(), 100.0 - destructionPercentage);
+        double successPercentage = Math.min(upgradeData.getSuccessPercentage() + UpgradeEventManager.getBoost(), 100.0);
         double failPercentage = Math.max(0.0, 100.0 - successPercentage - destructionPercentage);
 
         double randomValue = new Random().nextDouble() * 100.0;
