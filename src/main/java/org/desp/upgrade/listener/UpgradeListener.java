@@ -227,9 +227,9 @@ public class UpgradeListener implements Listener {
 
 
         } else if (result == UpgradeResult.DESTRUCTION) {
-            Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
             player.sendMessage("§4 강화에 실패하여 아이템이 파괴되었습니다.");
             if(!isProtectDestroy){
+                Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
                 player.getInventory().removeItem(session.getCurrentItem());
             }
             player.closeInventory();
