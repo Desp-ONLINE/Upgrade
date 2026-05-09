@@ -58,6 +58,8 @@ public class Repository {
         for (Document document : documents) {
             String itemName = document.getString("beforeWeapon");
             Document doc = weapons.find(Filters.eq("beforeWeapon", itemName)).first();
+            Integer successPercentage = doc.getInteger("successPercentage");
+            successPercentage+=5;
             if (doc != null) {
                 Document conditions = (Document) doc.get("conditions");
                 if (conditions != null) {
@@ -66,7 +68,7 @@ public class Repository {
                             doc.getString("beforeWeapon"),
                             doc.getString("afterWeapon"),
                             doc.getInteger("cost"),
-                            doc.getInteger("successPercentage"),
+                            successPercentage,
                             doc.getInteger("destructionPercentage"),
                             conditions.getInteger("level"),
                             conditions.getInteger("proceedQuest"),
