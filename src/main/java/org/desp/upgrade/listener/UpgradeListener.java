@@ -37,6 +37,7 @@ import org.desp.upgrade.view.ItemRender;
 public class UpgradeListener implements Listener {
 
     private final Map<UUID, PlayerUpgradeInfo> playerSessions = new HashMap<>();
+    private final Set<UUID> upgradeCooldown = new HashSet<>();
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
@@ -69,6 +70,10 @@ public class UpgradeListener implements Listener {
         int weaponLevel = weaponData.getLevel();
 
         if (e.getSlot() == UpgradeButtonSlot.SLOT) {
+            if (upgradeCooldown.contains(player.getUniqueId())) {
+                player.sendMessage("§c 아직 강화 하실 수 없습니다.");
+                return;
+            }
             if (weaponLevel <= playerLevel) {
                 if (e.getInventory().getItem(UpgradeButtonSlot.PROTECT_SLOT).getItemMeta().getCustomModelData() == ProtectItemCode.PROTECT_FALSE) {
                     processUpgrade(e, weaponData, itemName, session, false);
@@ -199,6 +204,10 @@ public class UpgradeListener implements Listener {
             if (Repository.weaponRepository.get(MMOItems.getID(upgradedItem)) != null) {
                 setPlayerSessions(e, player, upgradedItem);
             }
+
+            UUID playerId = player.getUniqueId();
+            upgradeCooldown.add(playerId);
+            Bukkit.getScheduler().runTaskLater(Upgrade.getInstance(), () -> upgradeCooldown.remove(playerId), 3L);
 
             // 강화 성공 시 상태 그대로 유지
 
