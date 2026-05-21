@@ -175,7 +175,7 @@ public class UpgradeListener implements Listener {
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
 
-            player.getInventory().removeItem(session.getCurrentItem());
+            removeMaterialFromInventory(player, weaponData.getBeforeWeapon(), 1);
 
             ItemStack upgradedItem = null;
             TypeManager types = MMOItems.plugin.getTypes();
@@ -239,7 +239,7 @@ public class UpgradeListener implements Listener {
             player.sendMessage("§4 강화에 실패하여 아이템이 파괴되었습니다.");
             if(!isProtectDestroy){
                 Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
-                player.getInventory().removeItem(session.getCurrentItem());
+                removeMaterialFromInventory(player, weaponData.getBeforeWeapon(), 1);
             }
             player.closeInventory();
             removeRequiredMaterials(player, requiredMaterials, false);
