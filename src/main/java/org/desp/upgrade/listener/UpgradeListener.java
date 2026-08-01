@@ -268,7 +268,8 @@ public class UpgradeListener implements Listener {
                 String requiredId = entry.getKey();
                 int requiredQuantity = entry.getValue();
 
-                int playerQuantity = inventoryMaterials.getOrDefault(requiredId, 0);
+                int playerQuantity = inventoryMaterials.getOrDefault(requiredId, 0)
+                        + inventoryMaterials.getOrDefault(requiredId + "_거불", 0);
                 if (playerQuantity < requiredQuantity) {
                     return false;
                 }
@@ -283,9 +284,13 @@ public class UpgradeListener implements Listener {
             return;
         }
         for (Map<String, Integer> material : requiredMaterials) {
-            material.forEach((requiredId, requiredQuantity) ->
-                    requiredQuantity = removeMaterialFromInventory(player, requiredId, requiredQuantity)
-            );
+            material.forEach((requiredId, requiredQuantity) -> {
+                // 거불 아이템 우선 소모 후, 부족분은 일반 아이템으로 소모
+                int remaining = removeMaterialFromInventory(player, requiredId + "_거불", requiredQuantity);
+                if (remaining > 0) {
+                    removeMaterialFromInventory(player, requiredId, remaining);
+                }
+            });
         }
     }
 
