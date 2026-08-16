@@ -17,6 +17,14 @@ import org.desp.upgrade.dto.UpgradeData;
 public class UpgradeUtil {
 
     public static void setLore(InventoryClickEvent e, UpgradeData weaponData) {
+        setLore(e, weaponData, false);
+    }
+
+    /**
+     * 강화 버튼 로어를 갱신한다.
+     * @param isPreview 미리보기 상태면 강화 불가 안내를 덧붙인다
+     */
+    public static void setLore(InventoryClickEvent e, UpgradeData weaponData, boolean isPreview) {
         ItemStack cursor = e.getInventory().getItem(UpgradeButtonSlot.SLOT);
         if (cursor == null || !cursor.hasItemMeta()) return;
 
@@ -31,7 +39,7 @@ public class UpgradeUtil {
                 ? "§3     성공 확률: §f" + baseSuccess + "% §a(+" + actualBoost + "%)"
                 : "§3     성공 확률: §f" + baseSuccess + "%";
 
-        List<String> upgradeLore = Arrays.asList(
+        List<String> upgradeLore = new ArrayList<>(Arrays.asList(
                 "§f    강화 정보",
                 "§a§m                                                ",
                 "§e     강화 필요 레벨: §f" + weaponData.getLevel() + "Lv",
@@ -42,7 +50,13 @@ public class UpgradeUtil {
                 "§4     파괴 확률: §f" + destruction + "%",
                 "§a§m                                                ",
                 "§6     필요 퀘스트: §f메인 퀘스트 "+weaponData.getProceedQuest()
-        );
+        ));
+
+        if (isPreview) {
+            upgradeLore.add("§a§m                                                ");
+            upgradeLore.add("§7     [미리보기] §c현재 상태에서는 강화할 수 없습니다.");
+            upgradeLore.add("§7     실제 강화는 인벤토리에서 아이템을 선택해주세요.");
+        }
 
         cursor.setLore(upgradeLore);
         e.getInventory().setItem(UpgradeButtonSlot.SLOT, cursor);

@@ -43,7 +43,49 @@ public class ItemRender {
         }
     }
 
+    /** MMOItems 전체 타입에서 ID로 아이템을 찾는다. 없으면 null */
+    public static ItemStack findMMOItem(String itemId) {
+        if (itemId == null) {
+            return null;
+        }
+        ItemStack found = null;
+        TypeManager types = MMOItems.plugin.getTypes();
+        for (Type type : types.getAll()) {
+            ItemStack item = MMOItems.plugin.getItem(type, itemId);
+            if (item != null) {
+                found = item;
+            }
+        }
+        return found;
+    }
+
+    /** 표시용 아이템 복사본에 안내 로어를 덧붙인다 (원본은 건드리지 않음) */
+    public static ItemStack withHint(ItemStack item, List<String> hintLines) {
+        if (item == null) {
+            return null;
+        }
+        ItemStack display = item.clone();
+        ItemMeta meta = display.getItemMeta();
+        if (meta == null) {
+            return display;
+        }
+        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        lore.add("");
+        lore.addAll(hintLines);
+        meta.setLore(lore);
+        display.setItemMeta(meta);
+        return display;
+    }
+
     public static void renderAfterWeapon(ItemStack currentItem, String itemName, InventoryClickEvent e, Player player) {
+        renderAfterWeapon(currentItem, itemName, e, false);
+    }
+
+    /**
+     * 강화 전/후 아이템 슬롯을 렌더링한다.
+     * @param isPreview 미리보기(다음 단계 확인) 상태 여부 - 이전 단계로 돌아가기 안내를 표시
+     */
+    public static void renderAfterWeapon(ItemStack currentItem, String itemName, InventoryClickEvent e, boolean isPreview) {
         UpgradeData upgradeData = Upgrade.getAllWeaponData().get(itemName);
         if (upgradeData == null) {
             return;
@@ -54,17 +96,27 @@ public class ItemRender {
         if (afterWeapon == null) {
             return;
         }
-        ItemStack nextItem = null;
-        TypeManager types = MMOItems.plugin.getTypes();
-        for (Type type : types.getAll()) {
-            if(MMOItems.plugin.getItem(type, afterWeapon) == null) {
-                continue;
-            } else {
-                nextItem = MMOItems.plugin.getItem(type, afterWeapon);
-            }
+        ItemStack nextItem = findMMOItem(afterWeapon);
+
+        // 이전 단계(왼쪽) 아이템 - 미리보기 중이면 돌아가기 안내
+        ItemStack beforeDisplay = currentItem;
+        if (isPreview) {
+            beforeDisplay = withHint(currentItem, List.of(
+                    "§7 [미리보기] 실제 강화는 인벤토리에서 아이템을 선택해주세요.",
+                    "§e ◀ 클릭 시 이전 강화 단계로 돌아갑니다."));
         }
-        e.getInventory().setItem(UpgradeButtonSlot.BEFORE_SLOT, currentItem);
-        e.getInventory().setItem(UpgradeButtonSlot.AFTER_SLOT, nextItem);
+
+        // 다음 단계(오른쪽) 아이템 - 다음 강화 데이터가 있으면 이어보기 안내
+        ItemStack afterDisplay = nextItem;
+        if (nextItem != null) {
+            boolean hasNext = Upgrade.getAllWeaponData().containsKey(afterWeapon);
+            afterDisplay = withHint(nextItem, hasNext
+                    ? List.of("§e ▶ 클릭 시 다음 강화 단계를 미리 볼 수 있습니다.")
+                    : List.of("§7 마지막 강화 단계입니다."));
+        }
+
+        e.getInventory().setItem(UpgradeButtonSlot.BEFORE_SLOT, beforeDisplay);
+        e.getInventory().setItem(UpgradeButtonSlot.AFTER_SLOT, afterDisplay);
     }
 
 
@@ -91,18 +143,12 @@ public class ItemRender {
                 String materialId = entry.getKey();
                 Integer quantity = entry.getValue();
 
-                ItemStack materialItem = null;
-                TypeManager types = MMOItems.plugin.getTypes();
-                for (Type type : types.getAll()) {
-                    if(MMOItems.plugin.getItem(type, materialId) == null) {
-                        continue;
-                    } else {
-                        materialItem = MMOItems.plugin.getItem(type, materialId);
-                    }
+                ItemStack materialItem = findMMOItem(materialId);
+                if (materialItem == null) {
+                    continue;
                 }
                 while (quantity > 64) {
-                    System.out.println(quantity);
-                    materialItem.setAmount(quantity);
+                    materialItem.setAmount(64);
                     e.getInventory().setItem(slot, materialItem);
                     quantity = quantity - 64;
                     slot++;

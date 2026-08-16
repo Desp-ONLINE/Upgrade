@@ -69,7 +69,20 @@ public class UpgradeListener implements Listener {
         int playerLevel = UpgradeUtil.getPlayerLevel(e);
         int weaponLevel = weaponData.getLevel();
 
+        if (e.getSlot() == UpgradeButtonSlot.AFTER_SLOT) {
+            showNextStage(e, player, session, weaponData);
+            return;
+        }
+        if (e.getSlot() == UpgradeButtonSlot.BEFORE_SLOT) {
+            showPreviousStage(e, player, session);
+            return;
+        }
+
         if (e.getSlot() == UpgradeButtonSlot.SLOT) {
+            if (session.isPreview()) {
+                player.sendMessage("§c 미리보기 중에는 강화할 수 없습니다. 인벤토리에서 강화할 아이템을 선택해주세요.");
+                return;
+            }
             if (upgradeCooldown.contains(player.getUniqueId())) {
                 player.sendMessage("§c 아직 강화 하실 수 없습니다.");
                 return;
@@ -192,9 +205,7 @@ public class UpgradeListener implements Listener {
             player.getInventory().addItem(upgradedItem);
 
             removeRequiredMaterials(player, requiredMaterials, false);
-            session.setCurrentItem(null);
-            session.setMaterials(null);
-            session.setItemName(null);
+            session.clear();
             e.getInventory().setItem(10, new ItemStack(Material.AIR));
             e.getInventory().setItem(16, new ItemStack(Material.AIR));
             for (int i = 36; i < 54; i++) {
@@ -313,34 +324,10 @@ public class UpgradeListener implements Listener {
 
     private void handlePlayerInventoryClick(InventoryClickEvent e) {
         Player player = (Player) e.getWhoClicked();
-        ItemStack currentItem = e.getCurrentItem();
-
-        if (currentItem == null || currentItem.getType().isAir()) {
-            return;
-        }
-        String itemName = MMOItems.getID(currentItem);
-
-        UpgradeData weaponData = Upgrade.getAllWeaponData().get(itemName);
-        if (weaponData == null) {
-            return;
-        }
-
-        PlayerUpgradeInfo session = playerSessions.computeIfAbsent(player.getUniqueId(), PlayerUpgradeInfo::new);
-
-        session.setMaterials(weaponData.getMaterials());
-
-        ItemStack oneItem = currentItem.clone();
-        oneItem.setAmount(1);
-        session.setCurrentItem(oneItem);
-        session.setItemName(itemName);
-
-        ItemRender.renderAfterWeapon(oneItem, itemName, e, player);
-
-        UpgradeUtil.setLore(e, weaponData);
-
-        ItemRender.renderMaterialsInventoryClick(itemName, e);
+        setPlayerSessions(e, player, e.getCurrentItem());
     }
 
+    /** 인벤토리에서 실제 아이템을 선택했을 때 세션을 초기화하고 강화 정보를 렌더링한다. */
     private void setPlayerSessions(InventoryClickEvent e, Player player, ItemStack currentItem) {
 
         if (currentItem == null || currentItem.getType().isAir()) {
@@ -355,17 +342,73 @@ public class UpgradeListener implements Listener {
 
         PlayerUpgradeInfo session = playerSessions.computeIfAbsent(player.getUniqueId(), PlayerUpgradeInfo::new);
 
-        session.setMaterials(weaponData.getMaterials());
-
         ItemStack oneItem = currentItem.clone();
         oneItem.setAmount(1);
-        session.setCurrentItem(oneItem);
+
+        session.setRoot(itemName, oneItem);
+        applyStage(e, session, itemName, oneItem, weaponData);
+    }
+
+    /**
+     * 오른쪽(강화 후) 아이템 클릭 - 강화 결과 아이템을 기준으로 다음 강화 단계를 미리보기로 이어서 보여준다.
+     * 다음 강화 데이터가 없을 때까지 계속 넘어갈 수 있다.
+     */
+    private void showNextStage(InventoryClickEvent e, Player player, PlayerUpgradeInfo session, UpgradeData currentData) {
+        String nextName = currentData.getAfterWeapon();
+        UpgradeData nextData = nextName == null ? null : Upgrade.getAllWeaponData().get(nextName);
+        if (nextData == null) {
+            player.sendMessage("§c 다음 강화 단계가 없습니다. 마지막 강화 단계입니다.");
+            return;
+        }
+
+        ItemStack nextItem = ItemRender.findMMOItem(nextName);
+        if (nextItem == null) {
+            player.sendMessage("§c " + nextName + " 아이템을 찾을 수 없습니다.");
+            return;
+        }
+        nextItem.setAmount(1);
+
+        session.getPreviewHistory().push(session.getItemName());
+        applyStage(e, session, nextName, nextItem, nextData);
+        player.playSound(player, "minecraft:ui.button.click", 0.5f, 1.2f);
+    }
+
+    /** 왼쪽(강화 전) 아이템 클릭 - 미리보기 중이면 이전 단계로 돌아간다. */
+    private void showPreviousStage(InventoryClickEvent e, Player player, PlayerUpgradeInfo session) {
+        if (!session.isPreview()) {
+            return;
+        }
+        String prevName = session.getPreviewHistory().pop();
+        UpgradeData prevData = Upgrade.getAllWeaponData().get(prevName);
+        if (prevData == null) {
+            return;
+        }
+
+        ItemStack prevItem;
+        if (!session.isPreview() && prevName.equals(session.getRootItemName())) {
+            // 실제 선택한 아이템으로 복귀
+            prevItem = session.getRootItem();
+        } else {
+            prevItem = ItemRender.findMMOItem(prevName);
+            if (prevItem == null) {
+                player.sendMessage("§c " + prevName + " 아이템을 찾을 수 없습니다.");
+                return;
+            }
+            prevItem.setAmount(1);
+        }
+        applyStage(e, session, prevName, prevItem, prevData);
+        player.playSound(player, "minecraft:ui.button.click", 0.5f, 0.8f);
+    }
+
+    /** 세션 상태를 갱신하고 강화 전/후 아이템, 강화 정보, 재료를 렌더링한다. */
+    private void applyStage(InventoryClickEvent e, PlayerUpgradeInfo session, String itemName, ItemStack item, UpgradeData weaponData) {
         session.setItemName(itemName);
+        session.setCurrentItem(item);
+        session.setMaterials(weaponData.getMaterials());
 
-        ItemRender.renderAfterWeapon(oneItem, itemName, e, player);
-
-        UpgradeUtil.setLore(e, weaponData);
-
+        boolean isPreview = session.isPreview();
+        ItemRender.renderAfterWeapon(item, itemName, e, isPreview);
+        UpgradeUtil.setLore(e, weaponData, isPreview);
         ItemRender.renderMaterialsInventoryClick(itemName, e);
     }
 
