@@ -2,8 +2,6 @@ package org.desp.upgrade.listener;
 
 import com.binggre.binggreEconomy.BinggreEconomy;
 import com.binggre.binggreapi.utils.ColorManager;
-import fr.skytasul.quests.BeautyQuests;
-import fr.skytasul.quests.api.quests.Quest;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -22,6 +20,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.desp.upgrade.ui.MaterialUI;
+import org.desp.upgrade.util.QuestCompat;
 import org.desp.upgrade.ui.UpgradeUI;
 import org.desp.upgrade.Upgrade;
 import org.desp.upgrade.database.Repository;
@@ -143,8 +142,8 @@ public class UpgradeListener implements Listener {
         }
 
         int proceedQuest = weaponData.getProceedQuest();
-        Quest quest = BeautyQuests.getInstance().getAPI().getQuestsManager().getQuest(proceedQuest);
-        boolean isSatisfiedQuest = BeautyQuests.getInstance().getPlayersManager().getAccount(player).getQuestDatas(quest).isFinished();
+        // IDEQuest에서 완료했으면 통과
+        boolean isSatisfiedQuest = QuestCompat.hasFinished(player, proceedQuest);
 
         if (!isSatisfiedQuest) {
             player.sendMessage("§c 최소 퀘스트를 진행하지 않았습니다");
