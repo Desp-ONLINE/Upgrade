@@ -21,6 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.desp.upgrade.ui.MaterialUI;
 import org.desp.upgrade.util.QuestCompat;
+import org.desp.upgrade.util.ReinforceCompat;
 import org.desp.upgrade.ui.UpgradeUI;
 import org.desp.upgrade.Upgrade;
 import org.desp.upgrade.database.Repository;
@@ -187,7 +188,7 @@ public class UpgradeListener implements Listener {
         if (result == UpgradeResult.SUCCESS) {
             Bukkit.getPluginManager().callEvent(new UpgradeSuccessEvent(weaponData, player));
 
-            removeMaterialFromInventory(player, weaponData.getBeforeWeapon(), 1);
+            ItemStack beforeItem = removeSelectedItem(player, session, weaponData.getBeforeWeapon());
 
             ItemStack upgradedItem = null;
             TypeManager types = MMOItems.plugin.getTypes();
@@ -198,6 +199,8 @@ public class UpgradeListener implements Listener {
                     upgradedItem = MMOItems.plugin.getItem(type, weaponData.getAfterWeapon());
                 }
             }
+            // 초월 강화(Reinforce) 기록 유지
+            upgradedItem = ReinforceCompat.transfer(beforeItem, upgradedItem);
             player.playSound(player, "minecraft:block.anvil.use", 1, 1);
             player.sendMessage(ColorManager.format("#FF8D56 [강화] §f"+upgradedItem.getItemMeta().getDisplayName()+"§a 강화에 성공하였습니다!"));
 
@@ -249,7 +252,7 @@ public class UpgradeListener implements Listener {
             player.sendMessage("§4 강화에 실패하여 아이템이 파괴되었습니다.");
             if(!isProtectDestroy){
                 Bukkit.getPluginManager().callEvent(new UpgradeDestroyEvent(weaponData, session.getCurrentItem(), player));
-                removeMaterialFromInventory(player, weaponData.getBeforeWeapon(), 1);
+                removeSelectedItem(player, session, weaponData.getBeforeWeapon());
             }
             player.closeInventory();
             removeRequiredMaterials(player, requiredMaterials, false);
@@ -302,6 +305,38 @@ public class UpgradeListener implements Listener {
                 }
             });
         }
+    }
+
+    /**
+     * 강화할 아이템 1개를 인벤토리에서 지운다. 같은 ID 가 여러 개면 UI 에서 선택한 아이템(초월 강화 기록 등까지 같은 것)을 우선 지운다.
+     * @return 지운 아이템(1개) 복사본. 못 찾으면 null
+     */
+    private ItemStack removeSelectedItem(Player player, PlayerUpgradeInfo session, String itemId) {
+        ItemStack root = session.getRootItem();
+        ItemStack target = null;
+        if (root != null) {
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null && item.isSimilar(root)) {
+                    target = item;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null && itemId.equals(MMOItems.getID(item))) {
+                    target = item;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            return null;
+        }
+        ItemStack removed = target.clone();
+        removed.setAmount(1);
+        target.setAmount(target.getAmount() - 1);
+        return removed;
     }
 
     private int removeMaterialFromInventory(Player player, String requiredId, int requiredQuantity) {
